@@ -1,7 +1,12 @@
 package edu.temple.soundgram;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,7 +49,7 @@ public class MainActivity extends Activity {
 	File photo, audio;
 	
 	LinearLayout ll;
-	
+	String newCache;
 	
 	// Refresh stream
 	private BroadcastReceiver refreshReceiver = new BroadcastReceiver() {
@@ -64,7 +69,10 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+		 
+	    newCache = Environment.getExternalStorageDirectory() + "/soundgram/cache";
+		 
+	      
 		
 		// Register listener for messages received while app is in foreground
         IntentFilter filter = new IntentFilter();
@@ -250,7 +258,49 @@ public class MainActivity extends Activity {
 			public void onClick(View v) {
 				MediaPlayer mPlayer = new MediaPlayer();
 		        try {
-		            mPlayer.setDataSource(soundgramObject.getString("audio_url"));
+                    final String audio_url = soundgramObject.getString("audio_url");
+                    String audio_name = audio_url.substring(audio_url.lastIndexOf("=")+1, audio_url.length());
+                    
+                    File cacheFolder = new File(newCache);
+                    if(cacheFolder.exists() ) {
+                        final File soundFile = new File(newCache + "/" + audio_name);
+                        if(soundFile.exists()) {
+                            
+                            mPlayer.setDataSource(soundFile.getPath());
+                        } else {
+                            Runnable cacheing = new Runnable() {
+                        	@Override
+                        	
+                                public void run() {
+                                    try {
+                                    	URL url = new URL(audio_url);
+                                        HttpURLConnection newConnection = (HttpURLConnection) url.openConnection();
+                                        newConnection.connect();
+                                        
+                                        FileOutputStream audioFile = new FileOutputStream(soundFile);
+                                        InputStream in = newConnection.getInputStream();
+
+                                        byte[] buffer = new byte[1024];
+                                        int length;
+                                        while ( (length = in.read(buffer)) > 0 ) {
+                                            audioFile.write(buffer,0, length);
+                                        }
+                                        audioFile.close();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                        	}
+
+                                
+                            };
+                            Thread thread = new Thread(cacheing);
+                            thread.start();
+                            mPlayer.setDataSource(audio_url);
+                        }
+                    } else {
+                        throw new Exception("Cache not created");
+                    }
+
 		            mPlayer.prepare();
 		            mPlayer.start();
 				} catch (Exception e) {
@@ -262,6 +312,7 @@ public class MainActivity extends Activity {
 		soundgramLayout.addView(soundgramImageView);
 		
 		return soundgramLayout;
+	
 	}
 	
 	@Override
