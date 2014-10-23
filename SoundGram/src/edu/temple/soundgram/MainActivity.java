@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,8 +13,10 @@ import org.json.JSONObject;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
 
+
 import edu.temple.soundgram.util.API;
 import edu.temple.soundgram.util.UploadSoundGramService;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -38,6 +39,7 @@ import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.Toast;
 
+@SuppressLint("ShowToast")
 public class MainActivity extends Activity {
 	
 	int userId = 111;
@@ -265,7 +267,7 @@ public class MainActivity extends Activity {
                     if(cacheFolder.exists() ) {
                         final File soundFile = new File(newCache + "/" + audio_name);
                         if(soundFile.exists()) {
-                            
+                        	Toast.makeText(MainActivity.this,"played from cache", 3000).show();
                             mPlayer.setDataSource(soundFile.getPath());
                         } else {
                             Runnable cacheing = new Runnable() {
@@ -274,7 +276,7 @@ public class MainActivity extends Activity {
                                 public void run() {
                                     try {
                                     	URL url = new URL(audio_url);
-                                        HttpURLConnection newConnection = (HttpURLConnection) url.openConnection();
+                                        URLConnection newConnection =  url.openConnection();
                                         newConnection.connect();
                                         
                                         FileOutputStream audioFile = new FileOutputStream(soundFile);
